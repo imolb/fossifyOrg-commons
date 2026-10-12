@@ -9,6 +9,7 @@ import org.fossify.commons.models.contacts.Email
 import org.fossify.commons.models.contacts.Event
 import org.fossify.commons.models.contacts.IM
 import org.fossify.commons.models.contacts.PhoneNumberConverter
+import org.fossify.commons.models.contacts.RelatedContact
 
 class Converters {
     private val gson = Gson()
@@ -20,6 +21,7 @@ class Converters {
     private val addressType = object : TypeToken<List<Address>>() {}.type
     private val eventType = object : TypeToken<List<Event>>() {}.type
     private val imType = object : TypeToken<List<IM>>() {}.type
+    private val relatedContactType = object : TypeToken<List<RelatedContact>>() {}.type
 
     @TypeConverter
     fun jsonToStringList(value: String): ArrayList<String> = gson.fromJson(value, stringType)
@@ -97,4 +99,10 @@ class Converters {
 
     @TypeConverter
     fun iMsListToJson(list: ArrayList<IM>): String = gson.toJson(list)
+
+    @TypeConverter
+    fun jsonToRelatedContactList(value: String): ArrayList<RelatedContact> = gson.fromJson(value, relatedContactType)
+
+    @TypeConverter
+    fun relatedContactListToJson(list: ArrayList<RelatedContact>): String = gson.toJson(list)
 }

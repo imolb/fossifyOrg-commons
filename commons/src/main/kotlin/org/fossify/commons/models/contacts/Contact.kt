@@ -37,7 +37,8 @@ data class Contact(
     var websites: ArrayList<String> = arrayListOf(),
     var IMs: ArrayList<IM> = arrayListOf(),
     var mimetype: String = "",
-    var ringtone: String? = ""
+    var ringtone: String? = "",
+    var relatedContacts: ArrayList<RelatedContact> = arrayListOf(),
 ) : Comparable<Contact> {
     val rawId = id
     val name = getNameToDisplay()
@@ -220,7 +221,8 @@ data class Contact(
             websites = ArrayList(),
             organization = Organization("", ""),
             IMs = ArrayList(),
-            ringtone = ""
+            ringtone = "",
+            relatedContacts = ArrayList()
         ).toString()
     }
 

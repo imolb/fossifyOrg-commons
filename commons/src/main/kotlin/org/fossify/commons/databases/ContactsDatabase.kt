@@ -17,7 +17,7 @@ import org.fossify.commons.models.contacts.Group
 import org.fossify.commons.models.contacts.LocalContact
 import java.util.concurrent.Executors
 
-@Database(entities = [LocalContact::class, Group::class], version = 3, exportSchema = true)
+@Database(entities = [LocalContact::class, Group::class], version = 4, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class ContactsDatabase : RoomDatabase() {
 
@@ -41,6 +41,7 @@ abstract class ContactsDatabase : RoomDatabase() {
                             })
                             .addMigrations(MIGRATION_1_2)
                             .addMigrations(MIGRATION_2_3)
+                            .addMigrations(MIGRATION_3_4)
                             .build()
                     }
                 }
@@ -83,6 +84,14 @@ abstract class ContactsDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.apply {
                     execSQL("ALTER TABLE contacts ADD COLUMN ringtone TEXT DEFAULT ''")
+                }
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.apply {
+                    execSQL("ALTER TABLE contacts ADD COLUMN related_contacts TEXT NOT NULL DEFAULT '[]'")
                 }
             }
         }

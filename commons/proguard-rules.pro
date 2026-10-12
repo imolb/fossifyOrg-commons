@@ -10,6 +10,7 @@
 
 -keep class android.support.v7.widget.SearchView { *; }
 -keep class org.fossify.commons.models.PhoneNumber { *; }
+-keep class org.fossify.commons.models.contacts.RelatedContact { *; }
 
 # Joda
 -dontwarn org.joda.convert.**

@@ -122,6 +122,7 @@ class LocalContactsHelper(val context: Context) {
             websites = localContact.websites
             IMs = localContact.IMs
             ringtone = localContact.ringtone
+            relatedContacts = localContact.relatedContacts
         }
     }
 
@@ -153,6 +154,7 @@ class LocalContactsHelper(val context: Context) {
             websites = contact.websites
             IMs = contact.IMs
             ringtone = contact.ringtone
+            relatedContacts = contact.relatedContacts
         }
     }
 

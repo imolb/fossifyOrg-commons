@@ -527,6 +527,35 @@ class ContactsHelper(val context: Context) {
         return websites
     }
 
+    private fun getRelations(contactId: Int? = null): SparseArray<ArrayList<RelatedContact>> {
+        val relations = SparseArray<ArrayList<RelatedContact>>()
+        val uri = Data.CONTENT_URI
+        val projection = arrayOf(
+            Data.RAW_CONTACT_ID,
+            CommonDataKinds.Relation.NAME,
+            CommonDataKinds.Relation.TYPE,
+            CommonDataKinds.Relation.LABEL
+        )
+
+        val selection = getSourcesSelection(true, contactId != null)
+        val selectionArgs = getSourcesSelectionArgs(CommonDataKinds.Relation.CONTENT_ITEM_TYPE, contactId)
+
+        context.queryCursor(uri, projection, selection, selectionArgs, showErrors = true) { cursor ->
+            val id = cursor.getIntValue(Data.RAW_CONTACT_ID)
+            val name = cursor.getStringValue(CommonDataKinds.Relation.NAME) ?: return@queryCursor
+            val type = cursor.getIntValue(CommonDataKinds.Relation.TYPE)
+            val label = cursor.getStringValue(CommonDataKinds.Relation.LABEL) ?: ""
+
+            if (relations[id] == null) {
+                relations.put(id, ArrayList())
+            }
+
+            relations[id]!!.add(RelatedContact(name, type, label))
+        }
+
+        return relations
+    }
+
     private fun getContactGroups(storedGroups: ArrayList<Group>, contactId: Int? = null): SparseArray<ArrayList<Group>> {
         val groups = SparseArray<ArrayList<Group>>()
         if (!context.hasPermission(PERMISSION_READ_CONTACTS)) {
@@ -785,9 +814,11 @@ class ContactsHelper(val context: Context) {
                 val organization = getOrganizations(id)[id] ?: Organization("", "")
                 val websites = getWebsites(id)[id] ?: ArrayList()
                 val ims = getIMs(id)[id] ?: ArrayList()
+                val relatedContacts = getRelations(id)[id] ?: ArrayList()
                 return Contact(
                     id, prefix, firstName, middleName, surname, suffix, nickname, photoUri, number, emails, addresses, events,
-                    accountName, starred, contactId, thumbnailUri, null, notes, groups, organization, websites, ims, mimetype, ringtone
+                    accountName, starred, contactId, thumbnailUri, null, notes, groups, organization, websites, ims, mimetype, ringtone,
+                    relatedContacts
                 )
             }
         }
@@ -1129,6 +1160,26 @@ class ContactsHelper(val context: Context) {
                 }
             }
 
+            // delete relations
+            ContentProviderOperation.newDelete(Data.CONTENT_URI).apply {
+                val selection = "${Data.RAW_CONTACT_ID} = ? AND ${Data.MIMETYPE} = ? "
+                val selectionArgs = arrayOf(contact.id.toString(), CommonDataKinds.Relation.CONTENT_ITEM_TYPE)
+                withSelection(selection, selectionArgs)
+                operations.add(build())
+            }
+
+            // add relations
+            contact.relatedContacts.forEach {
+                ContentProviderOperation.newInsert(Data.CONTENT_URI).apply {
+                    withValue(Data.RAW_CONTACT_ID, contact.id)
+                    withValue(Data.MIMETYPE, CommonDataKinds.Relation.CONTENT_ITEM_TYPE)
+                    withValue(CommonDataKinds.Relation.NAME, it.name)
+                    withValue(CommonDataKinds.Relation.TYPE, it.type)
+                    withValue(CommonDataKinds.Relation.LABEL, it.label)
+                    operations.add(build())
+                }
+            }
+
             // delete groups
             val relevantGroupIDs = getStoredGroupsSync().map { it.id }
             if (relevantGroupIDs.isNotEmpty()) {
@@ -1386,6 +1437,18 @@ class ContactsHelper(val context: Context) {
                     withValue(Data.MIMETYPE, CommonDataKinds.Website.CONTENT_ITEM_TYPE)
                     withValue(CommonDataKinds.Website.URL, it)
                     withValue(CommonDataKinds.Website.TYPE, DEFAULT_WEBSITE_TYPE)
+                    operations.add(build())
+                }
+            }
+
+            // relations
+            contact.relatedContacts.forEach {
+                ContentProviderOperation.newInsert(Data.CONTENT_URI).apply {
+                    withValueBackReference(Data.RAW_CONTACT_ID, 0)
+                    withValue(Data.MIMETYPE, CommonDataKinds.Relation.CONTENT_ITEM_TYPE)
+                    withValue(CommonDataKinds.Relation.NAME, it.name)
+                    withValue(CommonDataKinds.Relation.TYPE, it.type)
+                    withValue(CommonDataKinds.Relation.LABEL, it.label)
                     operations.add(build())
                 }
             }
